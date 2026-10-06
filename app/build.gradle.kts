@@ -1,18 +1,54 @@
+import java.net.URI
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Bundled driver: pinned released binary (../bundled-driver.json), downloaded at build time and
+// sha256-checked; never committed. Override with -PpanvkSo=<path> (skips the pin check).
+val bundledDriverJsonFile = File(rootDir, "bundled-driver.json")
+@Suppress("UNCHECKED_CAST")
+val bundledDriver = groovy.json.JsonSlurper().parse(bundledDriverJsonFile) as Map<String, Any?>
+@Suppress("UNCHECKED_CAST")
+val bundledRelease = bundledDriver["release"] as Map<String, Any?>
+val pinnedSha = bundledRelease["sha256"] as String
+val pinnedUrl = "https://github.com/${bundledRelease["repo"]}/releases/download/${bundledRelease["tag"]}/${bundledRelease["asset"]}"
+val pinnedCache = File(System.getProperty("user.home"), ".cache/panprobe/${pinnedSha}.so")
+
+fun sha256Of(f: File): String {
+    val md = MessageDigest.getInstance("SHA-256")
+    f.inputStream().use { ins ->
+        val buf = ByteArray(1 shl 16)
+        while (true) { val n = ins.read(buf); if (n < 0) break; md.update(buf, 0, n) }
+    }
+    return md.digest().joinToString("") { "%02x".format(it) }
+}
+
 val panvkSoProp = providers.gradleProperty("panvkSo").orNull
-val defaultPanvkPath = File(rootDir.parentFile.parentFile, "build/android-dxint-dist/libvulkan_panfrost.so")
-val panvkSoFile = if (panvkSoProp != null) file(panvkSoProp) else defaultPanvkPath
+val panvkSoFile = if (panvkSoProp != null) file(panvkSoProp) else pinnedCache
 
 val checkPanvkSo = tasks.register("checkPanvkSo") {
     inputs.property("panvkSoPath", panvkSoFile.absolutePath)
-    outputs.upToDateWhen { panvkSoFile.exists() }
+    inputs.property("pinnedSha", pinnedSha)
+    outputs.upToDateWhen { panvkSoFile.exists() && (panvkSoProp != null || sha256Of(panvkSoFile) == pinnedSha) }
     doLast {
-        if (!panvkSoFile.exists()) {
-            throw GradleException("Bundled driver panvkSo not found at: ${panvkSoFile.absolutePath}. Specify -PpanvkSo=<path> or ensure default path exists.")
+        if (panvkSoProp != null) {
+            if (!panvkSoFile.exists()) throw GradleException("panvkSo not found: ${panvkSoFile.absolutePath}")
+            return@doLast
+        }
+        if (!(pinnedCache.exists() && sha256Of(pinnedCache) == pinnedSha)) {
+            pinnedCache.parentFile.mkdirs()
+            val tmp = File(pinnedCache.parentFile, "${pinnedSha}.part")
+            logger.lifecycle("Downloading bundled driver $pinnedUrl")
+            URI(pinnedUrl).toURL().openStream().use { ins -> tmp.outputStream().use { ins.copyTo(it) } }
+            val got = sha256Of(tmp)
+            if (got != pinnedSha) {
+                tmp.delete()
+                throw GradleException("Bundled driver sha256 mismatch: expected $pinnedSha, got $got")
+            }
+            tmp.renameTo(pinnedCache)
         }
     }
 }
@@ -23,8 +59,6 @@ val copyPanvkSo = tasks.register<Copy>("copyPanvkSo") {
     into(file("build/generated/panvkJni/arm64-v8a"))
     rename { "libvulkan_panfrost.so" }
 }
-
-val bundledDriverJsonFile = File(rootDir.parentFile.parentFile, "apps/panvk-launcher/app/src/main/assets/bundled-driver.json")
 
 val checkBundledDriverJson = tasks.register("checkBundledDriverJson") {
     inputs.property("bundledDriverJsonPath", bundledDriverJsonFile.absolutePath)

@@ -7,23 +7,17 @@ import xml.etree.ElementTree as ET
 
 def find_repo_root():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    # repo root is 3 levels up from apps/panvk-test/tools
-    candidate = os.path.abspath(os.path.join(script_dir, "..", "..", ".."))
-    if os.path.exists(os.path.join(candidate, "tests", "dxvk", "vulkan")):
-        return candidate
-    cwd = os.getcwd()
-    if os.path.exists(os.path.join(cwd, "tests", "dxvk", "vulkan")):
-        return cwd
-    return candidate
+    # repo root is one level up from tools/
+    return os.path.abspath(os.path.join(script_dir, ".."))
 
 def main():
     repo_root = find_repo_root()
     parser = argparse.ArgumentParser(description="Generate vkinfo_gen.h from vk.xml and vulkan_core.h")
-    parser.add_argument("--registry", default=os.path.join(repo_root, "work", "mesa-dxint", "src", "vulkan", "registry", "vk.xml"),
-                        help="Path to vk.xml")
-    parser.add_argument("--header", default=os.path.join(repo_root, "work", "mesa-dxint", "include", "vulkan", "vulkan_core.h"),
-                        help="Path to vulkan_core.h")
-    parser.add_argument("--output", default=os.path.join(repo_root, "apps", "panvk-test", "app", "src", "main", "cpp", "vkinfo_gen.h"),
+    parser.add_argument("--registry", required=True,
+                        help="Path to vk.xml (e.g. Mesa's src/vulkan/registry/vk.xml)")
+    parser.add_argument("--header", required=True,
+                        help="Path to vulkan_core.h (e.g. Mesa's include/vulkan/vulkan_core.h)")
+    parser.add_argument("--output", default=os.path.join(repo_root, "app", "src", "main", "cpp", "vkinfo_gen.h"),
                         help="Path to output vkinfo_gen.h")
     args = parser.parse_args()
 

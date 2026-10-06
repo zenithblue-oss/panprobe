@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
 project(panvktest C)
 
-set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../..")
-set(VULKAN_INCLUDE_DIR "${REPO_ROOT}/work/mesa-dxint/include" CACHE PATH "Vulkan headers")
+set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../..")
+# Vendored Khronos headers (newer than the NDK's; vkinfo_gen.h needs them).
+set(VULKAN_INCLUDE_DIR "${REPO_ROOT}/third_party/vulkan-headers/include" CACHE PATH "Vulkan headers")
+set(VK_INC_LIST "${VULKAN_INCLUDE_DIR}")
 
 function(add_vk_test test_name test_rel_path)
     set(target_name "t_${test_name}")
@@ -15,7 +17,7 @@ function(add_vk_test test_name test_rel_path)
         -w -O2 -fvisibility=default
     )
     target_include_directories(${target_name} PRIVATE
-        "${VULKAN_INCLUDE_DIR}"
+        ${VK_INC_LIST}
         "${src_dir}"
     )
     if(test_name STREQUAL "bc_decode")
@@ -49,7 +51,7 @@ target_compile_options(t_vkinfo PRIVATE
     -w -O2 -fvisibility=default
 )
 target_include_directories(t_vkinfo PRIVATE
-    "${VULKAN_INCLUDE_DIR}"
+    ${VK_INC_LIST}
     "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_link_libraries(t_vkinfo PRIVATE dl m)
@@ -61,7 +63,7 @@ add_library(panvktest SHARED
 target_compile_options(panvktest PRIVATE -w -O2 -fvisibility=default)
 target_compile_definitions(panvktest PRIVATE VK_USE_PLATFORM_ANDROID_KHR)
 target_include_directories(panvktest PRIVATE
-    "${VULKAN_INCLUDE_DIR}"
+    ${VK_INC_LIST}
     "${REPO_ROOT}/tests/dxvk/vulkan/clip-cull")
 target_link_libraries(panvktest PRIVATE android log dl m)
 
