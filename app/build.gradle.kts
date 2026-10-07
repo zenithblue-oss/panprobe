@@ -36,6 +36,7 @@ val checkPanvkSo = tasks.register("checkPanvkSo") {
     doLast {
         if (panvkSoProp != null) {
             if (!panvkSoFile.exists()) throw GradleException("panvkSo not found: ${panvkSoFile.absolutePath}")
+            if (sha256Of(panvkSoFile) != pinnedSha) logger.warn("WARNING: -PpanvkSo sha256 != bundled-driver.json pin ($pinnedSha): APK label will not match the bundled .so")
             return@doLast
         }
         if (!(pinnedCache.exists() && sha256Of(pinnedCache) == pinnedSha)) {
@@ -90,8 +91,8 @@ android {
         applicationId = "dev.zenithblue.panvktest"
         minSdk = 29
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.2.2"
+        versionCode = 7
+        versionName = "1.2.3"
 
         ndk {
             abiFilters.add("arm64-v8a")
