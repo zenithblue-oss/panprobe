@@ -89,10 +89,12 @@ android {
 
     defaultConfig {
         applicationId = "dev.zenithblue.panvktest"
+        // -PappIdSuffix=.foo installs a side-by-side copy (own data, own driver).
+        providers.gradleProperty("appIdSuffix").orNull?.let { applicationIdSuffix = it }
         minSdk = 29
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.2.3"
+        versionCode = 11
+        versionName = "1.2.4"
 
         ndk {
             abiFilters.add("arm64-v8a")
