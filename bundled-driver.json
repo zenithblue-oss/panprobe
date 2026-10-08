@@ -1,6 +1,6 @@
 {
   "id": "panvk-kbase-g615-0.1.0-beta.18-rc1",
-  "name": "PanVK Kbase G615 — beta.18 RC1",
+  "name": "PanVK Kbase — beta.18 RC1",
   "packageVersion": "0.1.0-beta.18-rc1",
   "displayVersion": "beta.18 RC1 (Mesa 5a07217f, ≤180, v10-v13 tested; v14 untested; v9 experimental, partly broken)",
   "driverVersion": "Mesa 26.3.0-devel",
