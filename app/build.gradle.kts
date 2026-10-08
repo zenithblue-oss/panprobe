@@ -93,8 +93,8 @@ android {
         providers.gradleProperty("appIdSuffix").orNull?.let { applicationIdSuffix = it }
         minSdk = 29
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.2.4"
+        versionCode = 13
+        versionName = "1.2.5"
 
         ndk {
             abiFilters.add("arm64-v8a")
